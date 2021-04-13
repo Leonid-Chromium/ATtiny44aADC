@@ -1,0 +1,113 @@
+
+ADCAttiny44a.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000058  00000000  00000000  00000054  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00800060  00800060  000000ac  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .comment      00000030  00000000  00000000  000000ac  2**0
+                  CONTENTS, READONLY
+  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000000dc  2**2
+                  CONTENTS, READONLY
+  4 .debug_aranges 00000020  00000000  00000000  00000118  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_info   000004a8  00000000  00000000  00000138  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_abbrev 0000043e  00000000  00000000  000005e0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_line   000001bc  00000000  00000000  00000a1e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_frame  00000024  00000000  00000000  00000bdc  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_str    000002a9  00000000  00000000  00000c00  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_ranges 00000010  00000000  00000000  00000ea9  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	10 c0       	rjmp	.+32     	; 0x22 <__ctors_end>
+   2:	17 c0       	rjmp	.+46     	; 0x32 <__bad_interrupt>
+   4:	16 c0       	rjmp	.+44     	; 0x32 <__bad_interrupt>
+   6:	15 c0       	rjmp	.+42     	; 0x32 <__bad_interrupt>
+   8:	14 c0       	rjmp	.+40     	; 0x32 <__bad_interrupt>
+   a:	13 c0       	rjmp	.+38     	; 0x32 <__bad_interrupt>
+   c:	12 c0       	rjmp	.+36     	; 0x32 <__bad_interrupt>
+   e:	11 c0       	rjmp	.+34     	; 0x32 <__bad_interrupt>
+  10:	10 c0       	rjmp	.+32     	; 0x32 <__bad_interrupt>
+  12:	0f c0       	rjmp	.+30     	; 0x32 <__bad_interrupt>
+  14:	0e c0       	rjmp	.+28     	; 0x32 <__bad_interrupt>
+  16:	0d c0       	rjmp	.+26     	; 0x32 <__bad_interrupt>
+  18:	0c c0       	rjmp	.+24     	; 0x32 <__bad_interrupt>
+  1a:	0b c0       	rjmp	.+22     	; 0x32 <__bad_interrupt>
+  1c:	0a c0       	rjmp	.+20     	; 0x32 <__bad_interrupt>
+  1e:	09 c0       	rjmp	.+18     	; 0x32 <__bad_interrupt>
+  20:	08 c0       	rjmp	.+16     	; 0x32 <__bad_interrupt>
+
+00000022 <__ctors_end>:
+  22:	11 24       	eor	r1, r1
+  24:	1f be       	out	0x3f, r1	; 63
+  26:	cf e5       	ldi	r28, 0x5F	; 95
+  28:	d1 e0       	ldi	r29, 0x01	; 1
+  2a:	de bf       	out	0x3e, r29	; 62
+  2c:	cd bf       	out	0x3d, r28	; 61
+  2e:	02 d0       	rcall	.+4      	; 0x34 <main>
+  30:	11 c0       	rjmp	.+34     	; 0x54 <_exit>
+
+00000032 <__bad_interrupt>:
+  32:	e6 cf       	rjmp	.-52     	; 0x0 <__vectors>
+
+00000034 <main>:
+
+
+int main(void)
+{
+	//Порт А пин 3 на вход
+    DDRA &= (0<<PINA0);
+  34:	8a b3       	in	r24, 0x1a	; 26
+  36:	1a ba       	out	0x1a, r1	; 26
+	//Настраиваем АЦП
+	ADMUX=
+  38:	80 e8       	ldi	r24, 0x80	; 128
+  3a:	87 b9       	out	0x07, r24	; 7
+	(0<<MUX5)| //выбираем пин 13 для ввода через мультиплексер
+	(0<<REFS0)|
+	(1<<REFS1)| //вибираем внутрений ИОН 1,1В
+	(0<<ADLAR); //выравнивание справо
+	
+	ADCSRA|=
+  3c:	86 b1       	in	r24, 0x06	; 6
+  3e:	82 68       	ori	r24, 0x82	; 130
+  40:	86 b9       	out	0x06, r24	; 6
+	(1<<ADEN)| //разрешаем работу АЦП
+	(0<<ADPS2)|
+	(1<<ADPS1)|
+	(0<<ADPS0); //Устанавливаем прескейлер на 4
+	// Запуск АЦП
+	ADCSRA|=(1<<ADSC);
+  42:	86 b1       	in	r24, 0x06	; 6
+  44:	80 64       	ori	r24, 0x40	; 64
+  46:	86 b9       	out	0x06, r24	; 6
+	
+    while (1) 
+    {
+		//Проверка на принятие информации
+		if (ADCSRA & 1<<ADIF) //Если флаг ADIF не равен 1
+  48:	34 9b       	sbis	0x06, 4	; 6
+  4a:	fe cf       	rjmp	.-4      	; 0x48 <__SREG__+0x9>
+		{
+			
+			ADCSRA|= (1<<ADIF); //Сново выставляем флаг
+  4c:	86 b1       	in	r24, 0x06	; 6
+  4e:	80 61       	ori	r24, 0x10	; 16
+  50:	86 b9       	out	0x06, r24	; 6
+  52:	fa cf       	rjmp	.-12     	; 0x48 <__SREG__+0x9>
+
+00000054 <_exit>:
+  54:	f8 94       	cli
+
+00000056 <__stop_program>:
+  56:	ff cf       	rjmp	.-2      	; 0x56 <__stop_program>
